@@ -1,24 +1,24 @@
 #![allow(non_snake_case)]
 use dioxus::html::geometry::ElementPoint;
 use dioxus::prelude::*;
-use plotters_dioxus::{ Plotters, DioxusDrawingArea };
-use plotters::{ define_color, doc, coord::{ ReverseCoordTranslate }, prelude::* };
+use plotters::{coord::ReverseCoordTranslate, define_color, doc, prelude::*};
+use plotters_dioxus::{BitmapPlotterProps, DioxusBitmapDrawingArea, DioxusBitmapPlotter};
 
 define_color!(BACKGROUND, 11, 20, 31, "background");
 define_color!(ITEM, 57, 90, 131, "item");
 
 use rand::SeedableRng;
-use rand_distr::{ Distribution, Normal };
+use rand_distr::{Distribution, Normal};
 use rand_xorshift::XorShiftRng;
 
 fn main() {
-    dioxus_desktop::launch(App);
+    launch(App);
 }
 
 fn draw_scatter_plot(
-    drawing_area: DioxusDrawingArea,
+    drawing_area: &mut DioxusBitmapDrawingArea,
     click_coord: ElementPoint,
-    x_axis_scale: f64
+    x_axis_scale: f64,
 ) -> () {
     let number_sample = 50000;
     let normal_dist = Normal::new(0.5, 0.1).unwrap();
@@ -27,10 +27,12 @@ fn draw_scatter_plot(
     let data = iter_rand
         .enumerate()
         .take(number_sample)
-        .map(|(idx, data)| (
-            f64::from(i32::try_from(idx).expect("Expect to be not more than 1000")),
-            data,
-        ))
+        .map(|(idx, data)| {
+            (
+                f64::from(i32::try_from(idx).expect("Expect to be not more than 1000")),
+                data,
+            )
+        })
         .collect::<Vec<(f64, f64)>>();
     drawing_area.fill(&BACKGROUND).expect("Expect to work");
     let mut scatter_ctx = ChartBuilder::on(&drawing_area)
@@ -51,12 +53,12 @@ fn draw_scatter_plot(
         .configure_mesh()
         .disable_x_mesh()
         .disable_y_mesh()
-        .y_label_style(("sans-serif", 11, &WHITE).into_text_style(&drawing_area))
-        .x_label_style(("sans-serif", 11, &WHITE).into_text_style(&drawing_area))
+        .y_label_style(("sans-serif", 11, &WHITE).into_text_style(drawing_area))
+        .x_label_style(("sans-serif", 11, &WHITE).into_text_style(drawing_area))
         .x_desc("Count")
         .y_desc("Data")
         .axis_style(original_style)
-        .axis_desc_style(("sans-serif", 11, &WHITE).into_text_style(&drawing_area))
+        .axis_desc_style(("sans-serif", 11, &WHITE).into_text_style(drawing_area))
         .draw()
         .expect("Succeed");
     let t = data
@@ -69,12 +71,10 @@ fn draw_scatter_plot(
         .reverse_translate((click_coord.x as i32, click_coord.y as i32))
         .map(|coord| {
             scatter_ctx
-                .draw_series(
-                    LineSeries::new(
-                        (0..number_sample).map(|x| (x as f64, coord.1)),
-                        WHITE
-                    )
-                )
+                .draw_series(LineSeries::new(
+                    (0..number_sample).map(|x| (x as f64, coord.1)),
+                    WHITE,
+                ))
                 .unwrap();
         });
     drawing_area
@@ -84,20 +84,30 @@ fn draw_scatter_plot(
         );
 }
 
-fn App<'a>(cx: Scope<'a>) -> Element {
-    let click_coord_state = use_state(cx, ElementPoint::default);
-    let x_axis_scale_state = use_state(cx, || 1.0f64);
+#[component]
+fn App() -> Element {
+    let mut click_coord_state = use_signal(ElementPoint::default);
+    let mut x_axis_scale_state = use_signal(|| 1.0f64);
 
-    render!(Plotters {
+    let props = BitmapPlotterProps {
         size: (400, 400),
-        init: move |d| draw_scatter_plot(d, **click_coord_state, **x_axis_scale_state),
-        on_click: |e: Event<MouseData>| click_coord_state.set(e.element_coordinates()),
-        on_wheel: |e: Event<WheelData>|
-            x_axis_scale_state.set(
-                (
-                    **x_axis_scale_state +
-                    (if e.delta().strip_units().y > 0.0 { -0.1 } else { 0.1 })
-                ).max(0.01)
-            ),
+        on_click: Some(EventHandler::new(move |e: MouseEvent| {
+            click_coord_state.set(e.element_coordinates())
+        })),
+        on_wheel: Some(EventHandler::new(move |e: Event<WheelData>| {
+            let current = *x_axis_scale_state.read();
+            let delta = if e.delta().strip_units().y > 0.0 {
+                -0.1
+            } else {
+                0.1
+            };
+
+            x_axis_scale_state.set((current + delta).max(0.01).min(1.025))
+        })),
+        ..Default::default()
+    };
+
+    DioxusBitmapPlotter(props, move |d| {
+        draw_scatter_plot(d, *click_coord_state.read(), *x_axis_scale_state.read())
     })
 }
