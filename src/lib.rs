@@ -3,11 +3,13 @@ mod svg_plotter;
 
 #[cfg(feature = "bitmap")]
 mod bitmap_plotter;
+
+#[cfg(feature = "canvas")]
+mod canvas_plotter;
+
 pub(crate) mod common;
 
 pub mod prelude {
-    pub use crate::common::BitmapPlotterProps;
-
     #[cfg(feature = "bitmap")]
     pub use crate::bitmap_plotter::DioxusBitmapDrawingArea;
     #[cfg(feature = "bitmap")]
@@ -16,6 +18,10 @@ pub mod prelude {
     pub use crate::svg_plotter::DioxusSvgDrawingArea;
     #[cfg(feature = "svg")]
     pub use crate::svg_plotter::DioxusSvgPlotter;
+    #[cfg(feature = "canvas")]
+    pub use crate::canvas_plotter::DioxusCanvasDrawingArea;
+    #[cfg(feature = "canvas")]
+    pub use crate::canvas_plotter::DioxusCanvasPlotter;
 }
 
 pub use prelude::*;

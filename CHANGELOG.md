@@ -1,5 +1,22 @@
 # Changelog
 
+## plotters-dixous 1.0.0
+
+### Breaking
+- api is now divided into svg and bitmap backends
+- svg plotter is now behind the svg feature flag (enabled by default)
+- bitmap plotter is now behind the bitmap feature flag (enabled by default)
+- plotting elements now uses the dioxus v7 component system
+
+### Dependencies
+- updated image to 0.25.10
+- updated base64 to 0.22.1
+- updated dioxus to 0.7.9
+- updated plotters 0.3.7
+
+### Added
+- Support for plotter's `SVGBackend`
+
 ## plotters-dixous 0.2.2
 
 ### Added

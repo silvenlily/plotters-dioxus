@@ -2,7 +2,7 @@
 use dioxus::html::geometry::ElementPoint;
 use dioxus::prelude::*;
 use plotters::{coord::ReverseCoordTranslate, define_color, doc, prelude::*};
-use plotters_dioxus::{BitmapPlotterProps, DioxusBitmapDrawingArea, DioxusBitmapPlotter};
+use plotters_dioxus::{DioxusBitmapDrawingArea, DioxusBitmapPlotter};
 
 define_color!(BACKGROUND, 11, 20, 31, "background");
 define_color!(ITEM, 57, 90, 131, "item");
@@ -89,25 +89,23 @@ fn App() -> Element {
     let mut click_coord_state = use_signal(ElementPoint::default);
     let mut x_axis_scale_state = use_signal(|| 1.0f64);
 
-    let props = BitmapPlotterProps {
-        size: (400, 400),
-        on_click: Some(EventHandler::new(move |e: MouseEvent| {
-            click_coord_state.set(e.element_coordinates())
-        })),
-        on_wheel: Some(EventHandler::new(move |e: Event<WheelData>| {
-            let current = *x_axis_scale_state.read();
-            let delta = if e.delta().strip_units().y > 0.0 {
-                -0.1
-            } else {
-                0.1
-            };
+    rsx! {
+        DioxusBitmapPlotter{
+            size: (400, 400),
+            on_click: Some(EventHandler::new(move |e: MouseEvent| {
+                click_coord_state.set(e.element_coordinates())
+            })),
+            on_wheel: Some(EventHandler::new(move |e: Event<WheelData>| {
+                let current = *x_axis_scale_state.read();
+                let delta = if e.delta().strip_units().y > 0.0 {
+                    -0.1
+                } else {
+                    0.1
+                };
 
-            x_axis_scale_state.set((current + delta).max(0.01).min(1.025))
-        })),
-        ..Default::default()
-    };
-
-    DioxusBitmapPlotter(props, move |d| {
-        draw_scatter_plot(d, *click_coord_state.read(), *x_axis_scale_state.read())
-    })
+                x_axis_scale_state.set((current + delta).max(0.01).min(1.025))
+            })),
+            init: move |d| {draw_scatter_plot(d, *click_coord_state.read(), *x_axis_scale_state.read())}
+        }
+    }
 }

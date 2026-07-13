@@ -1,3 +1,45 @@
-[workspace]
-resolver = "1"
-members = ["plotters-dioxus", "demo"]
+[package]
+name = "plotters-dioxus"
+version = "1.0.0"
+edition = "2024"
+license = "MIT"
+resolver = "3"
+description = "A plotters-rs component for dioxus"
+readme = "../README.md"
+repository = "https://github.com/DorianPinaud/plotters-dioxus"
+keywords = ["dioxus", "plotters-rs", "plot", "chart", "drawing"]
+authors = ["Dorian Pinaud dorian.pinaud@gmail.com", "Lily Young lily@silverlily.net"]
+categories = ["visualization", "gui"]
+
+[features]
+default = ["bitmap"]
+svg = ["plotters/svg_backend"]
+canvas = ["dep:plotters-canvas", "dep:web-sys"]
+bitmap = ["plotters/bitmap_backend", "dep:image", "dep:base64"]
+
+[dependencies]
+dioxus = "^0.7.9"
+plotters = { version = "0.3", default-features = false }
+plotters-canvas = { version = "0.3", optional = true }
+image = { version = "0.25.10", optional = true }
+base64 = { version = "0.22.1", optional = true }
+web-sys = { version = "0.3", features = ["HtmlCanvasElement", "CanvasRenderingContext2d"], optional = true }
+
+[dev-dependencies]
+rand = { version = "0.10.0", default-features = false, features = ["alloc"] }
+rand_distr = "0.6.0"
+rand_xorshift = "0.5.0"
+dioxus = { version = "0.7.9" }
+plotters = { version = "^0.3", default-features = true }
+
+[[example]]
+name = "svg"
+required-features = ["svg"]
+
+[[example]]
+name = "bitmap"
+required-features = ["bitmap"]
+
+[[example]]
+name = "canvas"
+required-features = ["canvas", "dioxus/web"]
